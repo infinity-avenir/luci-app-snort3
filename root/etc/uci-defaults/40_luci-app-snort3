@@ -1,0 +1,31 @@
+#!/bin/sh
+#
+# Runs once on package install. Ensures the snort uci section exists and
+# refreshes the rpcd ACL cache so the new luci.snort3 object is reachable.
+#
+
+# Seed a minimal config section if the snort package has not created one.
+if ! uci -q get snort.snort >/dev/null 2>&1; then
+	uci -q batch <<-EOF
+		set snort.snort=snort
+		set snort.snort.enabled='0'
+		set snort.snort.interface='br-lan'
+		set snort.snort.mode='ids'
+		set snort.snort.method='afpacket'
+		set snort.snort.home_net='192.168.1.0/24'
+		set snort.snort.external_net='any'
+		set snort.snort.config_dir='/etc/snort'
+		set snort.snort.rules_dir='/etc/snort/rules'
+		set snort.snort.log_dir='/var/log/snort'
+		set snort.snort.alert_file='/var/log/snort/alert_fast.txt'
+		commit snort
+	EOF
+fi
+
+chmod 0755 /usr/libexec/rpcd/luci.snort3 2>/dev/null
+chmod 0755 /usr/libexec/snort3-update.sh 2>/dev/null
+
+rm -f /tmp/luci-indexcache /tmp/luci-modulecache/* 2>/dev/null
+/etc/init.d/rpcd reload 2>/dev/null
+
+exit 0

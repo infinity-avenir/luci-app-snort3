@@ -1,0 +1,155 @@
+/*
+ * luci-app-snort3 - light theme styling
+ * Scoped under .snort3 so it does not affect the rest of LuCI and stays
+ * light regardless of the active LuCI theme.
+ */
+
+.snort3 {
+	--s3-bg: #ffffff;
+	--s3-fg: #222831;
+	--s3-muted: #6b7280;
+	--s3-border: #e2e6ea;
+	--s3-shadow: 0 1px 3px rgba(16, 24, 40, 0.06), 0 1px 2px rgba(16, 24, 40, 0.04);
+	--s3-accent: #2563eb;
+	--s3-ok: #16a34a;
+	--s3-warn: #d97706;
+	--s3-bad: #dc2626;
+	color: var(--s3-fg);
+}
+
+/* Card grid for the dashboard */
+.snort3 .s3-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	gap: 14px;
+	margin: 4px 0 18px;
+}
+
+.snort3 .s3-card {
+	background: var(--s3-bg);
+	border: 1px solid var(--s3-border);
+	border-radius: 10px;
+	box-shadow: var(--s3-shadow);
+	padding: 16px 18px;
+}
+
+.snort3 .s3-card h4 {
+	margin: 0 0 4px;
+	font-size: 0.8rem;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: var(--s3-muted);
+}
+
+.snort3 .s3-metric {
+	font-size: 1.65rem;
+	font-weight: 700;
+	line-height: 1.2;
+	color: var(--s3-fg);
+}
+
+.snort3 .s3-sub {
+	font-size: 0.82rem;
+	color: var(--s3-muted);
+	margin-top: 2px;
+}
+
+/* Status badges */
+.snort3 .s3-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 3px 10px;
+	border-radius: 999px;
+	font-size: 0.8rem;
+	font-weight: 600;
+	border: 1px solid transparent;
+}
+.snort3 .s3-badge::before {
+	content: "";
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: currentColor;
+}
+.snort3 .s3-badge.ok   { color: var(--s3-ok);   background: #ecfdf3; border-color: #abefc6; }
+.snort3 .s3-badge.bad  { color: var(--s3-bad);  background: #fef3f2; border-color: #fecdca; }
+.snort3 .s3-badge.warn { color: var(--s3-warn); background: #fffaeb; border-color: #fedf89; }
+
+/* Memory bar */
+.snort3 .s3-bar {
+	height: 8px;
+	border-radius: 999px;
+	background: #eef2f6;
+	overflow: hidden;
+	margin-top: 10px;
+}
+.snort3 .s3-bar > span {
+	display: block;
+	height: 100%;
+	background: var(--s3-accent);
+	border-radius: 999px;
+	transition: width 0.4s ease;
+}
+
+/* Toolbar of action buttons */
+.snort3 .s3-toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin: 8px 0 18px;
+	align-items: center;
+}
+
+/* Log / alert viewer */
+.snort3 .s3-console {
+	background: #fbfcfd;
+	border: 1px solid var(--s3-border);
+	border-radius: 8px;
+	padding: 12px 14px;
+	font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+	font-size: 0.8rem;
+	line-height: 1.5;
+	color: #2b3440;
+	max-height: 460px;
+	overflow: auto;
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+.snort3 .s3-console .s3-row { padding: 1px 0; }
+.snort3 .s3-console .s3-row:nth-child(even) { background: #f4f7fa; }
+
+.snort3 .s3-empty {
+	color: var(--s3-muted);
+	font-style: italic;
+	padding: 18px;
+	text-align: center;
+}
+
+/* Progress (rule update) */
+.snort3 .s3-progress {
+	height: 14px;
+	border-radius: 999px;
+	background: #eef2f6;
+	overflow: hidden;
+	border: 1px solid var(--s3-border);
+}
+.snort3 .s3-progress > span {
+	display: block;
+	height: 100%;
+	width: 0;
+	background: linear-gradient(90deg, #2563eb, #3b82f6);
+	transition: width 0.5s ease;
+}
+.snort3 .s3-progress-label {
+	font-size: 0.82rem;
+	color: var(--s3-muted);
+	margin: 6px 2px 0;
+}
+
+.snort3 .s3-note {
+	font-size: 0.82rem;
+	color: var(--s3-muted);
+	margin-top: 4px;
+}
