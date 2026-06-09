@@ -57,20 +57,34 @@ filesystem grants.
 
 ### Option B — manual install on a running router
 
-Copy the trees to the device and refresh rpcd + LuCI:
+Copy the trees to the device and refresh rpcd. **Static assets must go under
+`/www`** (LuCI serves `/luci-static/...` from `/www/luci-static/...`); the rpcd
+backend, config, menu and ACL go under `/`.
 
 ```sh
-# from this directory, on the router:
-cp -a root/*        /
-cp -a htdocs/*      /www/luci-static/../..   # i.e. into /www/luci-static/resources/...
-# (simpler: rsync the htdocs/luci-static tree to /www/luci-static)
+# On the router, from the unpacked luci-app-snort3/ directory:
 
+# 1. LuCI view files (4 .js) + CSS -> the path LuCI requests
+mkdir -p /www/luci-static/resources/view/snort3
+cp htdocs/luci-static/resources/view/snort3/* /www/luci-static/resources/view/snort3/
+
+# 2. rpcd backend, default config, menu and ACL -> /   ('/.' merges into existing dirs)
+cp -a root/. /
+
+# 3. Fix perms, seed UCI, reload rpcd
 chmod 0755 /usr/libexec/rpcd/luci.snort3 /usr/libexec/snort3-update.sh
-sh /etc/uci-defaults/40_luci-app-snort3      # seeds UCI + fixes perms + reloads
+sh /etc/uci-defaults/40_luci-app-snort3      # seeds UCI + fixes perms + clears luci cache
 /etc/init.d/rpcd reload
 ```
 
-Then reload the LuCI page. The app appears under **Services → Snort3**.
+Verify the assets landed correctly, then reload the LuCI page:
+
+```sh
+ls -l /www/luci-static/resources/view/snort3/   # expect overview.js, config.js, alerts.js, rules.js, snort3.css
+```
+
+The app appears under **Services → Snort3**. (The `?v=…` query string LuCI adds
+to resource URLs is a cache-buster, so no browser-cache clearing is needed.)
 
 ## Files
 
