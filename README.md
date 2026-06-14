@@ -1,5 +1,8 @@
 # luci-app-snort3
-A LuCI web interface for managing the **Snort3** IDS/IPS on OpenWrt. Configure, monitor and update Snort directly from the router's web UI. 
+
+A LuCI web interface for managing the **Snort3** IDS/IPS on OpenWrt. Configure,
+monitor and update Snort directly from the router's web UI. The interface uses a
+clean, white/light theme.
 
 ## Features
 
@@ -20,8 +23,9 @@ A LuCI web interface for managing the **Snort3** IDS/IPS on OpenWrt. Configure, 
     `<file_name>` is derived from the installed Snort version
     (e.g. Snort 3.1.20.0 → `snortrules-snapshot-31200.tar.gz`). An inactive
     subscription transparently returns the free package.
-  * "Check for updates" performs a lightweight HEAD request to show remote size
-    and last-modified before committing to a download.
+  * **Automatic update schedule** — configure updates to run monthly (day 1–30),
+    weekly (Sun–Sat) or daily, at a chosen hour and minute (00/15/30/45). The
+    schedule is stored in UCI and backed by a cron job managed from the UI.
   * Live download/extract **progress bar** with a streaming log.
 * **Service controls** — start / stop / restart, enable / disable auto-start, and
   **symlink management**: point `active.rules` at any installed ruleset so your
@@ -43,7 +47,11 @@ filesystem grants.
 
 * OpenWrt with LuCI (client-side / JS rendering — `luci-base`)
 * `snort3`
-* `curl`, `tar`, `gzip` (pulled in as dependencies)
+* `tar`, `gzip`
+* An HTTPS download client: `curl`, **or** `uclient-fetch` (the OpenWrt
+  default), **or** BusyBox `wget` with SSL. The rule downloader auto-detects
+  whichever is installed; `curl` additionally enables the remote size /
+  last-modified readout on "Check for updates".
 
 ## Install
 
@@ -108,6 +116,22 @@ htdocs/luci-static/resources/view/snort3/  overview/config/alerts/rules views + 
   mechanism) so switching the active ruleset needs no further config edits.
 * Switching to IPS mode requires an inline DAQ (typically `nfq`) plus the
   matching netfilter setup; afpacket/pcap are passive (IDS).
+
+## Troubleshooting
+
+* **"HTTP 0" / "downloader exit 127" on update** — no HTTP client is installed.
+  Exit 127 means the download command was not found. Install one:
+  `opkg update && opkg install curl` (or `opkg install uclient-fetch`).
+* **404 loading a view (`/luci-static/resources/view/snort3/*.js`)** — the JS
+  assets are not under `/www`. See the manual-install steps above; they must
+  land in `/www/luci-static/resources/view/snort3/`.
+* **Empty Overview / RPC errors** — confirm the backend is registered:
+  `ubus list | grep luci.snort3` and `ubus call luci.snort3 getStatus`. If
+  missing, ensure `/usr/libexec/rpcd/luci.snort3` is present and `0755`, then
+  `/etc/init.d/rpcd reload`.
+* **Bad oinkcode** — snort.org returns an HTML error page instead of a gzip
+  archive; the updater detects this and reports that the oinkcode is likely
+  invalid. Clear it with "Use community rules" to fall back to the free set.
 
 ## License
 

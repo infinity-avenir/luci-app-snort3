@@ -1,0 +1,32 @@
+{
+	"luci-app-snort3": {
+		"description": "Grant access to Snort3 status, configuration and rule management",
+		"read": {
+			"ubus": {
+				"luci.snort3": [
+					"getInterfaces",
+					"listRules",
+					"getStatus",
+					"getAlerts",
+					"getLog",
+					"getRulesInfo",
+					"getUpdateStatus",
+					"getSchedule"
+				]
+			},
+			"uci": [ "snort" ]
+		},
+		"write": {
+			"ubus": {
+				"luci.snort3": [
+					"serviceAction",
+					"startUpdate",
+					"setOinkcode",
+					"setSchedule",
+					"linkRules"
+				]
+			},
+			"uci": [ "snort" ]
+		}
+	}
+}
