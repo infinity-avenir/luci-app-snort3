@@ -136,3 +136,22 @@ htdocs/luci-static/resources/view/snort3/  overview/config/alerts/rules views + 
 ## License
 
 Apache-2.0.
+
+
+=====================================
+
+
+Screenshot :
+
+<img width="1501" height="560" alt="image" src="https://github.com/user-attachments/assets/3023e590-b9de-4da8-81cd-3d3daaf99927" />
+
+<img width="1507" height="643" alt="image" src="https://github.com/user-attachments/assets/7178f60c-e836-48e8-8c62-8dc1d44c1c0b" />
+
+<img width="1502" height="466" alt="image" src="https://github.com/user-attachments/assets/79902240-953a-4886-8d58-6bc11d277b34" />
+
+<img width="1498" height="642" alt="image" src="https://github.com/user-attachments/assets/c3b1420e-1cf5-46c7-9c2e-fc7af526de59" />
+
+<img width="1493" height="677" alt="image" src="https://github.com/user-attachments/assets/cc59c5ff-078c-4028-9504-f73697b8189d" />
+
+<img width="1495" height="1001" alt="image" src="https://github.com/user-attachments/assets/fb728be3-2955-4f1f-9fe3-3f6ad6a4aaaf" />
+
