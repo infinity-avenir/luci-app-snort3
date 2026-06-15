@@ -200,6 +200,7 @@ method_getRulesInfo() {
 		newest="$(ls -t "$rules_dir"/*.rules 2>/dev/null | grep -v active.rules | head -n1)"
 	if [ -n "$newest" ]; then
 		mtime="$(stat -c %Y "$newest" 2>/dev/null)" || mtime="$(date -r "$newest" +%s 2>/dev/null)" || mtime=0
+		fi
 	fi
 	[ -z "$count" ] && count=0
 	[ -z "$mtime" ] && mtime=0
