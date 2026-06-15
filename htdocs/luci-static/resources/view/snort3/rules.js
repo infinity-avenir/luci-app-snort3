@@ -49,9 +49,14 @@ function infoCard(title, value, sub, small) {
 
 function renderInfo(info) {
 	info = info || {};
-	var date = info.last_update
-		? new Date(info.last_update * 1000).toLocaleString()
-		: _('never');
+	var date, dateSub;
+	if (info.last_update) {
+		date = new Date(info.last_update * 1000).toLocaleString();
+		dateSub = (info.rule_count || 0) + ' rules at last update';
+	} else {
+		date = _('never');
+		dateSub = '';
+	}
 	var source = info.oinkcode_set
 		? _('Subscription')
 		: _('Community (free)');
