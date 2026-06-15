@@ -99,11 +99,29 @@ snapshot_name() {
 
 # ---- 1. resolve source ----------------------------------------------------
 
+CUSTOM_URL="${1:-}"
+
 rm -rf "$WORKDIR"
 mkdir -p "$WORKDIR"
 TARBALL="$WORKDIR/rules.tar.gz"
 
-if [ -n "$OINKCODE" ]; then
+if [ "$CUSTOM_URL" = "community" ]; then
+	URL="$COMMUNITY_URL"
+	SOURCE="community"
+elif [ -n "$CUSTOM_URL" ] && [ "$CUSTOM_URL" != "auto" ]; then
+	# A specific URL was passed from the UI.
+	# Append oinkcode if the URL contains the placeholder pattern.
+	if [ -n "$OINKCODE" ] && echo "$CUSTOM_URL" | grep -q 'snort\.org/'; then
+		case "$CUSTOM_URL" in
+			*oinkcode=*) URL="$CUSTOM_URL" ;;
+			*\?*)        URL="${CUSTOM_URL}&oinkcode=${OINKCODE}" ;;
+			*)           URL="${CUSTOM_URL}?oinkcode=${OINKCODE}" ;;
+		esac
+	else
+		URL="$CUSTOM_URL"
+	fi
+	SOURCE="custom ($(basename "${URL%%\?*}"))"
+elif [ -n "$OINKCODE" ]; then
 	SNAP="$(snapshot_name)"
 	if [ -z "$SNAP" ]; then
 		logline "Could not detect Snort version; using community rules instead."
@@ -211,9 +229,8 @@ done
 # ---- 7. maintain the active.rules symlink ----------------------------------
 
 if [ -z "$primary" ]; then
-	# fall back to the largest ruleset
-	primary="$(find "$RULES_DIR" -name '*.rules' -printf '%s %f\n' 2>/dev/null \
-		| sort -nr | head -n1 | cut -d' ' -f2)"
+	primary="$(ls -S "$RULES_DIR"/*.rules 2>/dev/null | grep -v active.rules | head -n1)"
+	[ -n "$primary" ] && primary="$(basename "$primary")"
 fi
 if [ -n "$primary" ]; then
 	ln -sf "$primary" "$RULES_DIR/active.rules"
