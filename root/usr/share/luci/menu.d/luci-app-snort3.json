@@ -1,0 +1,48 @@
+{
+	"admin/services/snort3": {
+		"title": "Snort3 IDS/IPS",
+		"order": 60,
+		"action": {
+			"type": "firstchild"
+		},
+		"depends": {
+			"acl": [ "luci-app-snort3" ]
+		}
+	},
+
+	"admin/services/snort3/overview": {
+		"title": "Overview",
+		"order": 10,
+		"action": {
+			"type": "view",
+			"path": "snort3/overview"
+		}
+	},
+
+	"admin/services/snort3/config": {
+		"title": "Configuration",
+		"order": 20,
+		"action": {
+			"type": "view",
+			"path": "snort3/config"
+		}
+	},
+
+	"admin/services/snort3/alerts": {
+		"title": "Alerts & Logs",
+		"order": 30,
+		"action": {
+			"type": "view",
+			"path": "snort3/alerts"
+		}
+	},
+
+	"admin/services/snort3/rules": {
+		"title": "Rule Updates",
+		"order": 40,
+		"action": {
+			"type": "view",
+			"path": "snort3/rules"
+		}
+	}
+}
