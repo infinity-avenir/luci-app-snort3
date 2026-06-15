@@ -62,7 +62,7 @@ function renderInfo(info) {
 		: _('Community (free)');
 	return [
 		infoCard(_('Installed rules'), info.rule_count || 0, _('signatures across all rule files')),
-		infoCard(_('Last updated'), date, '', true),
+		infoCard(_('Last updated'), date, dateSub, true),
 		infoCard(_('Snort version'), info.snort_version || _('unknown'), info.snapshot_name || '', true),
 		infoCard(_('Active source'), source, info.oinkcode_set ? info.snapshot_name : _('no oinkcode set'), true)
 	];
