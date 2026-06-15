@@ -197,7 +197,9 @@ method_getRulesInfo() {
 		# Count rule signatures across all .rules files.
 		count="$(grep -rhcE '^[[:space:]]*(alert|drop|reject|block|pass|log|sdrop)[[:space:]]' \
 			"$rules_dir" 2>/dev/null | awk '{s+=$1} END{print s+0}')"
-		mtime="$(ls -t "$rules_dir"/*.rules 2>/dev/null | head -n1 | xargs stat -c %Y 2>/dev/null)"
+		newest="$(ls -t "$rules_dir"/*.rules 2>/dev/null | grep -v active.rules | head -n1)"
+	if [ -n "$newest" ]; then
+		mtime="$(stat -c %Y "$newest" 2>/dev/null)" || mtime="$(date -r "$newest" +%s 2>/dev/null)" || mtime=0
 	fi
 	[ -z "$count" ] && count=0
 	[ -z "$mtime" ] && mtime=0
