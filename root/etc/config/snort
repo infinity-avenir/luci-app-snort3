@@ -44,5 +44,10 @@ config snort 'snort'
 	option update_hour '3'
 	option update_minute '0'
 
+	# Stored update metadata (written by the update worker)
+	option update_source ''
+	option last_update_time '0'
+	option last_update_rules '0'
+
 	# Extra Snort Lua appended verbatim to the generated config.
 	option custom_config ''

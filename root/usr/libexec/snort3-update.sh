@@ -240,5 +240,13 @@ fi
 logline "Installed $count rule file(s)."
 rm -rf "$WORKDIR"
 
+# Save update metadata to UCI for the dashboard
+RULE_COUNT="$(grep -rhcE '^[[:space:]]*(alert|drop|reject|block|pass|log|sdrop)[[:space:]]' \
+	"$RULES_DIR" 2>/dev/null | awk '{s+=$1} END{print s+0}')"
+UPDATE_TIME="$(date +%s)"
+uci -q set snort.snort.last_update_time="$UPDATE_TIME"
+uci -q set snort.snort.last_update_rules="${RULE_COUNT:-0}"
+uci -q commit snort
+
 write_status false done 100 true "Updated $count rule file(s) from $SOURCE"
 exit 0

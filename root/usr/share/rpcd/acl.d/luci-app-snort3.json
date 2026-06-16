@@ -23,7 +23,8 @@
 					"startUpdate",
 					"setOinkcode",
 					"setSchedule",
-					"linkRules"
+					"setRuleEnabled",
+					"setAllRules"
 				]
 			},
 			"uci": [ "snort" ]

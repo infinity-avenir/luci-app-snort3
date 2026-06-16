@@ -57,26 +57,35 @@ method_getInterfaces() {
 }
 
 method_listRules() {
-	# List the *.rules files in the rules dir plus the current active link
-	# target, so the UI can manage the active.rules symlink without needing
-	# direct filesystem ACL grants.
-	local rules_dir active base
+	local rules_dir base sigcount
 	rules_dir="$(uci_get rules_dir)"
 	[ -z "$rules_dir" ] && rules_dir=/etc/snort/rules
 
-	active=""
-	[ -L "$rules_dir/active.rules" ] && active="$(readlink "$rules_dir/active.rules")"
+	# Read enabled rules from active.rules (include file, not symlink)
+	local active_file="$rules_dir/active.rules"
+	local enabled_list=""
+	if [ -f "$active_file" ] && [ ! -L "$active_file" ]; then
+		enabled_list="$(grep '^include ' "$active_file" 2>/dev/null | sed 's|^include .*/||')"
+	elif [ -L "$active_file" ]; then
+		# Legacy symlink — treat the target as the only enabled file
+		enabled_list="$(readlink "$active_file")"
+	fi
 
 	json_init
 	json_add_string rules_dir "$rules_dir"
-	json_add_string active "$active"
 	json_add_array files
 	if [ -d "$rules_dir" ]; then
 		for f in "$rules_dir"/*.rules; do
 			[ -f "$f" ] || continue
 			base="${f##*/}"
-			[ "$base" = active.rules ] && continue
-			json_add_string "" "$base"
+			[ "$base" = "active.rules" ] && continue
+			[ "$base" = "includes.rules" ] && continue
+			sigcount="$(grep -cE '^[[:space:]]*(alert|drop|reject|block|pass|log|sdrop)[[:space:]]' "$f" 2>/dev/null || echo 0)"
+			json_add_object ""
+			json_add_string name "$base"
+			json_add_int sigs "$sigcount"
+			json_add_boolean enabled "$(echo "$enabled_list" | grep -qxF "$base" && echo 1 || echo 0)"
+			json_close_object
 		done
 	fi
 	json_close_array
@@ -198,6 +207,7 @@ method_getLog() {
 
 method_getRulesInfo() {
 	local rules_dir count active mtime snapshot ver
+	local update_time update_rules update_source
 	rules_dir="$(uci_get rules_dir)"
 	[ -z "$rules_dir" ] && rules_dir=/etc/snort/rules
 
@@ -213,6 +223,13 @@ method_getRulesInfo() {
 	[ -z "$count" ] && count=0
 	[ -z "$mtime" ] && mtime=0
 
+	# Stored update metadata (written by the update worker on success)
+	update_time="$(uci_get last_update_time)"
+	update_rules="$(uci_get last_update_rules)"
+	update_source="$(uci_get update_source)"
+	[ -z "$update_time" ] && update_time=0
+	[ -z "$update_rules" ] && update_rules=0
+
 	active=""
 	[ -L "$rules_dir/active.rules" ] && active="$(readlink "$rules_dir/active.rules")"
 
@@ -223,6 +240,9 @@ method_getRulesInfo() {
 	json_add_string rules_dir "$rules_dir"
 	json_add_int rule_count "$count"
 	json_add_int last_update "$mtime"
+	json_add_int last_update_time "$update_time"
+	json_add_int last_update_rules "$update_rules"
+	json_add_string update_source "${update_source:-}"
 	json_add_string active_link "$active"
 	json_add_string snort_version "$ver"
 	json_add_string snapshot_name "$snapshot"
@@ -265,6 +285,10 @@ method_startUpdate() {
 	local url
 	json_load "$(cat)"
 	json_get_var url url
+
+	# Save the selected source to UCI for dropdown persistence
+	uci -q set "${CONFIG}.${SECTION}.update_source=$url"
+	uci -q commit "$CONFIG"
 
 	# Refuse to start if a previous run is still active.
 	if [ -f "$UPDATE_STATUS" ]; then
@@ -452,22 +476,88 @@ method_setSchedule() {
 	json_dump
 }
 
-method_linkRules() {
-	# Point <rules_dir>/active.rules at the chosen ruleset file.
-	local target rules_dir ok
+_rebuild_active_rules() {
+	# Regenerate active.rules as an include file from the enabled list
+	local rules_dir="$1"
+	local active_file="$rules_dir/active.rules"
+	local tmpf="/tmp/.snort3-active.$$"
+
+	echo "# Managed by luci-app-snort3 — do not edit" > "$tmpf"
+	if [ -f "$active_file" ] && [ ! -L "$active_file" ]; then
+		grep '^include ' "$active_file" 2>/dev/null >> "$tmpf"
+	fi
+	mv -f "$tmpf" "$active_file"
+}
+
+method_setRuleEnabled() {
+	local name enabled rules_dir ok
 	json_load "$(cat)"
-	json_get_var target target
+	json_get_var name name
+	json_get_var enabled enabled
 	rules_dir="$(uci_get rules_dir)"
 	[ -z "$rules_dir" ] && rules_dir=/etc/snort/rules
 
+	local active_file="$rules_dir/active.rules"
+
+	# Convert legacy symlink to include file
+	if [ -L "$active_file" ]; then
+		local old_target="$(readlink "$active_file")"
+		rm -f "$active_file"
+		echo "# Managed by luci-app-snort3 — do not edit" > "$active_file"
+		[ -n "$old_target" ] && echo "include $rules_dir/$old_target" >> "$active_file"
+	fi
+
+	[ ! -f "$active_file" ] && echo "# Managed by luci-app-snort3 — do not edit" > "$active_file"
+
 	ok=0
-	if [ -n "$target" ] && [ -f "$rules_dir/$target" ]; then
-		ln -sf "$target" "$rules_dir/active.rules" && ok=1
+	if [ -n "$name" ] && [ -f "$rules_dir/$name" ]; then
+		local include_line="include $rules_dir/$name"
+		if [ "$enabled" = "1" ] || [ "$enabled" = "true" ]; then
+			# Add if not already present
+			grep -qxF "$include_line" "$active_file" || echo "$include_line" >> "$active_file"
+			ok=1
+		else
+			# Remove the line
+			grep -vxF "$include_line" "$active_file" > "$active_file.tmp"
+			mv -f "$active_file.tmp" "$active_file"
+			ok=1
+		fi
 	fi
 
 	json_init
 	json_add_boolean success "$ok"
-	json_add_string target "$target"
+	json_add_string name "$name"
+	json_add_boolean enabled "$enabled"
+	json_dump
+}
+
+method_setAllRules() {
+	local enabled rules_dir
+	json_load "$(cat)"
+	json_get_var enabled enabled
+	rules_dir="$(uci_get rules_dir)"
+	[ -z "$rules_dir" ] && rules_dir=/etc/snort/rules
+
+	local active_file="$rules_dir/active.rules"
+
+	# Remove old symlink if present
+	[ -L "$active_file" ] && rm -f "$active_file"
+
+	echo "# Managed by luci-app-snort3 — do not edit" > "$active_file"
+
+	if [ "$enabled" = "1" ] || [ "$enabled" = "true" ]; then
+		for f in "$rules_dir"/*.rules; do
+			[ -f "$f" ] || continue
+			local base="${f##*/}"
+			[ "$base" = "active.rules" ] && continue
+			[ "$base" = "includes.rules" ] && continue
+			echo "include $rules_dir/$base" >> "$active_file"
+		done
+	fi
+
+	json_init
+	json_add_boolean success 1
+	json_add_boolean enabled "$enabled"
 	json_dump
 }
 
@@ -489,7 +579,8 @@ case "$1" in
 		json_add_object setOinkcode;      json_add_string oinkcode ""; json_close_object
 		json_add_object getSchedule; json_close_object
 		json_add_object setSchedule;      json_add_string frequency ""; json_add_int day 0; json_add_int hour 0; json_add_int minute 0; json_close_object
-		json_add_object linkRules;        json_add_string target ""; json_close_object
+		json_add_object setRuleEnabled;   json_add_string name ""; json_add_boolean enabled 0; json_close_object
+		json_add_object setAllRules;      json_add_boolean enabled 0; json_close_object
 		json_dump
 		;;
 	call)
@@ -507,7 +598,8 @@ case "$1" in
 			setOinkcode)      method_setOinkcode ;;
 			getSchedule)      method_getSchedule ;;
 			setSchedule)      method_setSchedule ;;
-			linkRules)        method_linkRules ;;
+			setRuleEnabled)   method_setRuleEnabled ;;
+			setAllRules)      method_setAllRules ;;
 			*)                echo '{"error":"unknown method"}' ;;
 		esac
 		;;
