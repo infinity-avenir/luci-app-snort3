@@ -55,13 +55,13 @@ filesystem grants.
 
 ## Install
 
-### Option A — build an `.ipk` in the OpenWrt SDK / buildroot
+### Option A — build an `.apk` in the OpenWrt SDK / buildroot
 
 1. Copy this directory into your feeds, e.g.
    `package/feeds/luci/luci-app-snort3` (or a custom feed).
 2. `make menuconfig` → enable **LuCI → Applications → luci-app-snort3**.
 3. `make package/luci-app-snort3/compile`.
-4. Install the resulting `.ipk` with `opkg install`.
+4. Install the resulting `.apk` with `apk install`.
 
 ### Option B — manual install on a running router
 
