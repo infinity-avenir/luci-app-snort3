@@ -1,0 +1,40 @@
+#!/bin/sh
+#
+# Runs on package install/upgrade (and once at boot if still present).
+#
+# /etc/config/snort belongs to the snort3 package, so this app does not ship
+# that file. Instead it adds the options it relies on, one by one, and only
+# where they are missing: values that snort3 or the user already set are
+# never changed.
+#
+
+[ -f /etc/config/snort ] || touch /etc/config/snort
+uci -q get snort.snort >/dev/null || uci -q set snort.snort=snort
+
+set_default() {
+	uci -q get "snort.snort.$1" >/dev/null || uci -q set "snort.snort.$1=$2"
+}
+
+set_default enabled '0'
+set_default interface 'br-lan'
+set_default mode 'ids'
+set_default method 'afpacket'
+set_default home_net '192.168.1.0/24'
+set_default external_net 'any'
+set_default config_dir '/etc/snort'
+set_default rules_dir '/etc/snort/rules'
+set_default log_dir '/var/log/snort'
+set_default alert_file '/var/log/snort/alert_fast.txt'
+set_default update_frequency 'disabled'
+set_default update_day '1'
+set_default update_hour '3'
+set_default update_minute '0'
+uci -q commit snort
+
+chmod 0755 /usr/libexec/rpcd/luci.snort3 2>/dev/null
+chmod 0755 /usr/libexec/snort3-update.sh 2>/dev/null
+
+rm -f /tmp/luci-indexcache /tmp/luci-modulecache/* 2>/dev/null
+/etc/init.d/rpcd reload 2>/dev/null
+
+exit 0
